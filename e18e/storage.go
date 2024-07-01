@@ -2,6 +2,7 @@ package e18e
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/bvisness/e18e-bot/config"
@@ -13,17 +14,6 @@ var conn *sql.DB
 
 func OpenDB() {
 	conn = utils.Must1(sql.Open("sqlite3", config.Config.Db.DSN))
-}
-
-type PR struct {
-	ID int `db:"id"`
-
-	Owner      string    `db:"owner"`
-	Repo       string    `db:"repo"`
-	PullNumber int       `db:"pull_number"`
-	OpenedAt   time.Time `db:"opened_at"`
-
-	NPMPackage string `db:"npm_package"`
 }
 
 func MigrateDB() {
@@ -39,4 +29,24 @@ func MigrateDB() {
 			npm_package TEXT NOT NULL
 		);
 	`))
+}
+
+type SQLiteTime time.Time
+
+func (s *SQLiteTime) Scan(src any) error {
+	switch src.(type) {
+	case string:
+		t, err := time.Parse("2006-01-02 15:04:05-07:00", src.(string))
+		if err != nil {
+			return fmt.Errorf("failed to parse ISO time: %w", err)
+		}
+		*s = SQLiteTime(t)
+		return nil
+	default:
+		return fmt.Errorf("failed to parse %v (%#v) as a SQLite time", src, src)
+	}
+}
+
+func (s SQLiteTime) String() string {
+	return time.Time(s).String()
 }

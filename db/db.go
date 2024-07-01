@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"reflect"
 	"regexp"
 	"strings"
@@ -409,6 +408,10 @@ primitive types and not structs, since the database only returns individual prim
 and it is our job to stitch them back together into structs later.
 */
 func typeIsQueryable(t reflect.Type) bool {
+	if reflect.PointerTo(t).Implements(reflect.TypeOf((*sql.Scanner)(nil)).Elem()) {
+		return true
+	}
+
 	k := t.Kind()
 	if k == reflect.Slice && t.Elem() == reflect.TypeOf(byte(0)) {
 		return true // []byte
@@ -458,88 +461,26 @@ func (it *Iterator[T]) Next() (*T, bool) {
 		return nil, false
 	}
 
+	cols := utils.Must1(it.rows.ColumnTypes())
 	result := reflect.New(it.destType)
+	resultConcrete := result.Interface().(*T)
 
 	if it.destTypeIsScalar {
 		// This type can be directly queried, meaning it's a simple scalar
 		// thing, and we can just take the easy way out.
-		cols := utils.Must1(it.rows.ColumnTypes())
 		if len(cols) != 1 {
 			panic(fmt.Errorf("tried to query a scalar value, but got %v values in the row", len(cols)))
 		}
-		dest := result.Interface().(*T)
-		utils.Must(it.rows.Scan(dest))
-		return dest, true
+		utils.Must(it.rows.Scan(resultConcrete))
 	} else {
-		// NOTE(ben): This is fragile and likely to break again. SQLite doesn't
-		// always know what the type is for a given column, if e.g. it's an
-		// expression like "COUNT(*) > 0" instead of an actual typed column.
-		//
-		// Really, generating a scan destination from ColumnTypes() is the
-		// problem here, since it's likely to not map well to Go code. We
-		// should generate a slice of scan destinations from the actual
-		// destination type - literally creating the result type, and getting
-		// pointers to all the destination fields.
-		//
-		// Or something. That might not work in all the situations we try to
-		// handle.
-		cols := utils.Must1(it.rows.ColumnTypes())
 		vals := make([]any, len(cols))
 		for i := range vals {
-			vals[i] = reflect.New(cols[i].ScanType()).Interface()
+			fieldValue, _ := followPathThroughStructs(result, it.fieldPaths[i])
+			vals[i] = fieldValue.Addr().Interface()
 		}
 		utils.Must(it.rows.Scan(vals...))
-
-		var currentField reflect.StructField
-		var currentValue reflect.Value
-		var currentIdx int
-
-		// Better logging of panics in this confusing reflection process
-		defer func() {
-			if r := recover(); r != nil {
-				if currentValue.IsValid() {
-					slog.Error("panic in iterator",
-						"index", currentIdx,
-						"field name", currentField.Name,
-						"field type", currentField.Type,
-						"value", currentValue.Interface(),
-						"value type", currentValue.Type())
-				}
-
-				if currentField.Name != "" {
-					panic(fmt.Errorf("panic while processing field '%s': %v", currentField.Name, r))
-				} else {
-					panic(r)
-				}
-			}
-		}()
-
-		for i, val := range vals {
-			currentIdx = i
-			if val == nil {
-				continue
-			}
-
-			var field reflect.Value
-			field, currentField = followPathThroughStructs(result, it.fieldPaths[i])
-
-			// Some actual values still come through as pointers (like net.IPNet). Dunno why.
-			// Regardless, we know these pointer values will never be nil, so we can get at
-			// the contents.
-			valReflected := reflect.ValueOf(val)
-			if valReflected.Kind() == reflect.Ptr {
-				valReflected = valReflected.Elem()
-			}
-			currentValue = valReflected
-
-			setValueFromDB(field, valReflected)
-
-			currentField = reflect.StructField{}
-			currentValue = reflect.Value{}
-		}
-
-		return result.Interface().(*T), true
 	}
+	return resultConcrete, true
 }
 
 func (it *Iterator[T]) Err() error {

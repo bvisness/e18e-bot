@@ -43,12 +43,12 @@ func Track(ctx context.Context, rest discord.Rest, i *discord.Interaction) error
 	if matches == nil {
 		problems = append(problems, "The provided URL was not a valid GitHub PR.")
 	}
-	owner, repo, pn := matches[1], matches[2], utils.Must1(strconv.Atoi(matches[3]))
 
 	if len(problems) > 0 {
 		return ReportProblems(ctx, rest, i.ID, i.Token, "Couldn't track that PR", problems...)
 	}
 
+	owner, repo, pn := matches[1], matches[2], utils.Must1(strconv.Atoi(matches[3]))
 	pr, _, err := githubClient.PullRequests.Get(ctx, owner, repo, pn)
 	if IsGitHubResponse(err, 404) {
 		return ReportProblem(ctx, rest, i.ID, i.Token, "Could not find that PR (is the URL correct?)")

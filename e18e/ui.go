@@ -8,6 +8,15 @@ import (
 	"github.com/bvisness/e18e-bot/discord"
 )
 
+func ReportNeutral(ctx context.Context, rest discord.Rest, id, token string, msg string) error {
+	return rest.CreateInteractionResponse(ctx, id, token, discord.InteractionResponse{
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord.InteractionCallbackData{
+			Content: msg,
+		},
+	})
+}
+
 func ReportSuccess(ctx context.Context, rest discord.Rest, id, token string, msg string) error {
 	return rest.CreateInteractionResponse(ctx, id, token, discord.InteractionResponse{
 		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
