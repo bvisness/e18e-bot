@@ -1,3 +1,4 @@
 .idea
 *.exe
 config/config.go
+e18e.sqlite

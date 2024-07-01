@@ -57,7 +57,7 @@ func (r *Rest) parseRateLimitHeaders(header http.Header) (rateLimitHeaders, bool
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
 		if err != nil {
-			r.logger().Error("failed to parse X-RateLimit-Limit header", "err", err, "value", limitStr)
+			r.Logger().Error("failed to parse X-RateLimit-Limit header", "err", err, "value", limitStr)
 			return rateLimitHeaders{}, false
 		}
 	}
@@ -66,7 +66,7 @@ func (r *Rest) parseRateLimitHeaders(header http.Header) (rateLimitHeaders, bool
 	if remainingStr != "" {
 		remaining, err = strconv.Atoi(remainingStr)
 		if err != nil {
-			r.logger().Error("failed to parse X-RateLimit-Remaining header", "err", err, "value", remainingStr)
+			r.Logger().Error("failed to parse X-RateLimit-Remaining header", "err", err, "value", remainingStr)
 			return rateLimitHeaders{}, false
 		}
 	}
@@ -75,7 +75,7 @@ func (r *Rest) parseRateLimitHeaders(header http.Header) (rateLimitHeaders, bool
 	if resetAfterStr != "" {
 		resetAfterSeconds, err := strconv.ParseFloat(resetAfterStr, 64)
 		if err != nil {
-			r.logger().Error("failed to parse X-RateLimit-Reset-After header", "err", err, "value", resetAfterStr)
+			r.Logger().Error("failed to parse X-RateLimit-Reset-After header", "err", err, "value", resetAfterStr)
 			return rateLimitHeaders{}, false
 		}
 		resetAfter = time.Duration(math.Ceil(resetAfterSeconds)) * time.Second
@@ -101,7 +101,7 @@ func (r *Rest) createLimiter(headers rateLimitHeaders, routeName string) {
 	if !loaded {
 		limiter := ilimiter.(*restRateLimiter)
 
-		log := r.logger().With("bucket", headers.Bucket)
+		log := r.Logger().With("bucket", headers.Bucket)
 
 	prefillloop:
 		// Pre-fill the limiter with remaining requests
@@ -227,13 +227,13 @@ func (r *Rest) doWithRateLimiting(ctx context.Context, routeName string, getReq 
 		if res.StatusCode == 429 {
 			if res.Header.Get("X-RateLimit-Global") != "" {
 				// globally rate limited
-				r.logger().Warn("got globally rate limited by Discord")
+				r.Logger().Warn("got globally rate limited by Discord")
 				retryAfter, err := strconv.Atoi(res.Header.Get("Retry-After"))
 				if err == nil {
 					globalRateLimitTime = time.Now().Add(time.Duration(retryAfter) * time.Second)
 				} else {
 					// well this is bad, just sleep for 60 seconds and pray that it's long enough
-					r.logger().Warn("got globally rate limited but couldn't determine how long to wait", "err", err)
+					r.Logger().Warn("got globally rate limited but couldn't determine how long to wait", "err", err)
 					globalRateLimitTime = time.Now().Add(60 * time.Second)
 				}
 			} else {
@@ -245,14 +245,14 @@ func (r *Rest) doWithRateLimiting(ctx context.Context, routeName string, getReq 
 					again. On the next go-around, hopefully we'll either succeed
 					or have a rate limiter initialized and ready to go.
 				*/
-				r.logger().Warn("got rate limited by Discord")
+				r.Logger().Warn("got rate limited by Discord")
 				if headersOk {
 					err := utils.SleepContext(ctx, headers.ResetAfter)
 					if err != nil {
 						return nil, err
 					}
 				} else {
-					r.logger().Warn("got rate limited, but didn't have the headers??")
+					r.Logger().Warn("got rate limited, but didn't have the headers??")
 					err := utils.SleepContext(ctx, 1*time.Second)
 					if err != nil {
 						return nil, err

@@ -19,23 +19,13 @@ func Run() {
 	})
 	slog.SetDefault(slog.New(h))
 
+	OpenDB()
+	MigrateDB()
+
 	botContext, cancelBot := context.WithCancel(context.Background())
 	bot := discord.RunBot(botContext, config.Config.Discord.BotToken, config.Config.Discord.BotUserID, &discord.DummyPersistence{}, discord.BotOptions{
 		GuildApplicationCommands: []discord.GuildApplicationCommand{
-			{
-				Type:        discord.ApplicationCommandTypeChatInput,
-				Name:        "track",
-				Description: "Track an e18e PR",
-				Options: []discord.ApplicationCommandOption{
-					{
-						Type:        discord.ApplicationCommandOptionTypeString,
-						Name:        "url",
-						Description: "The URL of the PR (e.g. https://github.com/...)",
-						Required:    true,
-					},
-				},
-				Func: Track,
-			},
+			TrackCommand,
 		},
 	})
 
@@ -52,18 +42,4 @@ func Run() {
 	}()
 
 	<-bot.C
-}
-
-func Track(ctx context.Context, rest discord.Rest, i *discord.Interaction) error {
-	err := rest.CreateInteractionResponse(ctx, i.ID, i.Token, discord.InteractionResponse{
-		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
-		Data: &discord.InteractionCallbackData{
-			Content: "that's a good one!",
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

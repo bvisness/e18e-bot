@@ -22,14 +22,12 @@ const baseUrl = "https://discord.com/api/v9"
 
 type Rest struct {
 	BotToken string
-
-	// Optional; defaults to slog.Default()
-	Logger *slog.Logger
+	logger   *slog.Logger
 }
 
-func (r *Rest) logger() *slog.Logger {
-	if r.Logger != nil {
-		return r.Logger
+func (r *Rest) Logger() *slog.Logger {
+	if r.logger != nil {
+		return r.logger
 	}
 	return slog.Default()
 }
@@ -616,6 +614,6 @@ func (r *Rest) logErrorResponse(ctx context.Context, name string, res *http.Resp
 		panic(err)
 	}
 
-	r.logger().ErrorContext(ctx, "msg", "name", name)
+	r.Logger().ErrorContext(ctx, "msg", "name", name)
 	fmt.Println(string(dump))
 }

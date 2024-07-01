@@ -140,7 +140,7 @@ func newBotInstance(token, applicationID string, persistence Persistence, opts B
 
 		Rest: Rest{
 			BotToken: token,
-			Logger:   opts.Logger, // Rest handles the default case on its own
+			logger:   opts.Logger, // Rest handles the default case on its own
 		},
 		Logger: utils.Or(opts.Logger, slog.Default()),
 
@@ -648,12 +648,7 @@ func (bot *BotInstance) createApplicationCommands(ctx context.Context, guildID s
 }
 
 func (bot *BotInstance) doInteraction(ctx context.Context, i *Interaction) (err error) {
-	defer func() {
-		if err != nil {
-			bot.Logger.Error("error when handling Discord interaction", "err", err)
-		}
-	}()
-	defer utils.RecoverPanicAsError(&err)
+	defer utils.RecoverPanicAsErrorAndLog(&err, bot.Logger)
 
 	if cmd, ok := bot.commands[i.Data.Name]; ok {
 		err := cmd(ctx, bot.Rest, i)
