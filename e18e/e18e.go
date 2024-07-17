@@ -26,6 +26,7 @@ func Run() {
 	bot := discord.RunBot(botContext, config.Config.Discord.BotToken, config.Config.Discord.BotUserID, &discord.DummyPersistence{}, discord.BotOptions{
 		GuildApplicationCommands: []discord.GuildApplicationCommand{
 			PRCommandGroup,
+			PackageCommandGroup,
 		},
 	})
 

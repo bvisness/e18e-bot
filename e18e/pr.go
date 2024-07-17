@@ -19,7 +19,7 @@ var PRCommandGroup = discord.GuildApplicationCommand{
 		{
 			Name:        "list",
 			Description: "List all the PRs currently being tracked.",
-			Func:        List,
+			Func:        ListPRs,
 		},
 		{
 			Name:        "track",
@@ -38,7 +38,7 @@ var PRCommandGroup = discord.GuildApplicationCommand{
 					Required:    true,
 				},
 			},
-			Func: Track,
+			Func: TrackPR,
 		},
 		{
 			Name:        "untrack",
@@ -51,12 +51,12 @@ var PRCommandGroup = discord.GuildApplicationCommand{
 					Required:    true,
 				},
 			},
-			Func: Untrack,
+			Func: UntrackPR,
 		},
 	},
 }
 
-func List(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
+func ListPRs(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
 	prs, err := db.Query[PR](ctx, conn, `SELECT $columns FROM pr`)
 	if err != nil {
 		return ReportError(ctx, rest, i.ID, i.Token, "Failed to load PRs", err)
@@ -82,7 +82,7 @@ func List(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts d
 
 var REGitHubPR = regexp.MustCompile(`https?://github\.com/([^/]+)/([^/]+)/pull/(\d+)`)
 
-func Track(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
+func TrackPR(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
 	npmPackage := opts.MustGet("package").Value.(string)
 	url := opts.MustGet("url").Value.(string)
 
@@ -143,7 +143,7 @@ func Track(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts 
 	))
 }
 
-func Untrack(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
+func UntrackPR(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
 	url := opts.MustGet("url").Value.(string)
 
 	var problems []string
