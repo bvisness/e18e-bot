@@ -32,7 +32,7 @@ type PackageVersion struct {
 	Package string `db:"package"`
 	Version string `db:"version"`
 
-	ReleasedAt  time.Time `db:"released_at"`
+	PublishedAt time.Time `db:"published_at"`
 	PublishedBy string    `db:"published_by"`
 	// TODO: Handle string arrays through Scanner
 	// Maintainers []string  `db:"maintainers"`

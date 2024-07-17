@@ -18,6 +18,7 @@ func OpenDB() {
 
 func MigrateDB() {
 	utils.Must1(conn.Exec(`
+		PRAGMA foreign_keys = ON;
 		CREATE TABLE IF NOT EXISTS pr (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 
@@ -37,7 +38,7 @@ func MigrateDB() {
 			package TEXT NOT NULL,
 			version TEXT NOT NULL,
 
-			released_at TEXT NOT NULL,
+			published_at TEXT NOT NULL,
 			published_by TEXT NOT NULL,
 			maintainers TEXT NOT NULL, -- JSON array of usernames
 
@@ -53,7 +54,7 @@ func MigrateDB() {
 			transitive_size_dev_bytes INTEGER NOT NULL DEFAULT 0,
 
 			PRIMARY KEY (package, version),
-			FOREIGN KEY (package) REFERENCES package(name)
+			FOREIGN KEY (package) REFERENCES package(name) ON DELETE RESTRICT
 		);
 		CREATE TABLE IF NOT EXISTS package_version_downloads (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +65,7 @@ func MigrateDB() {
 			weekly_downloads INTEGER NOT NULL, -- directly from npm
 			daily_downloads INTEGER, -- null at first, before computing from adjacent weekly downloads
 
-			FOREIGN KEY (package, version) REFERENCES package_version(package, version)
+			FOREIGN KEY (package, version) REFERENCES package_version(package, version) ON DELETE RESTRICT
 		);
 	`))
 }

@@ -28,7 +28,7 @@ var PRCommandGroup = discord.GuildApplicationCommand{
 				{
 					Type:        discord.ApplicationCommandOptionTypeString,
 					Name:        "package",
-					Description: "The name of the NPM package being PR'd",
+					Description: "The name of the npm package being PR'd",
 					Required:    true,
 				},
 				{

@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 
 	"github.com/bvisness/e18e-bot/config"
 	"github.com/bvisness/e18e-bot/discord"
+	"github.com/bvisness/e18e-bot/npm"
 )
+
+var npmClient = npm.Client{C: http.DefaultClient}
 
 func Run() {
 	fmt.Println("Hello, e18e!")
