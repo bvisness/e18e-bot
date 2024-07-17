@@ -28,10 +28,10 @@ func MigrateDB() {
 
 			package TEXT NOT NULL,
 
-			FOREIGN KEY (npm_package) REFERENCES package(name)
+			FOREIGN KEY (package) REFERENCES package(name)
 		);
 		CREATE TABLE IF NOT EXISTS package (
-			name TEXT NOT NULL PRIMARY KEY,
+			name TEXT NOT NULL PRIMARY KEY
 		);
 		CREATE TABLE IF NOT EXISTS package_version (
 			package TEXT NOT NULL,
@@ -39,13 +39,18 @@ func MigrateDB() {
 
 			released_at TEXT NOT NULL,
 			published_by TEXT NOT NULL,
-			contributors TEXT NOT NULL,
+			maintainers TEXT NOT NULL, -- JSON array of usernames
 
-			num_direct_dependencies INTEGER NOT NULL,
-			num_total_dependencies INTEGER NOT NULL,
-
-			self_size_bytes INTEGER NOT NULL,
-			total_size_bytes INTEGER NOT NULL,
+			-- stats
+			stats_computed INTEGER NOT NULL DEFAULT 0, -- boolean
+			num_direct_dependencies INTEGER NOT NULL DEFAULT 0,
+			num_transitive_dependencies INTEGER NOT NULL DEFAULT 0,
+			num_direct_dev_dependencies INTEGER NOT NULL DEFAULT 0,
+			num_transitive_dev_dependencies INTEGER NOT NULL DEFAULT 0,
+			self_size_bytes INTEGER NOT NULL DEFAULT 0,
+			transitive_size_bytes INTEGER NOT NULL DEFAULT 0,
+			self_size_dev_bytes INTEGER NOT NULL DEFAULT 0,
+			transitive_size_dev_bytes INTEGER NOT NULL DEFAULT 0,
 
 			PRIMARY KEY (package, version),
 			FOREIGN KEY (package) REFERENCES package(name)

@@ -25,9 +25,7 @@ func Run() {
 	botContext, cancelBot := context.WithCancel(context.Background())
 	bot := discord.RunBot(botContext, config.Config.Discord.BotToken, config.Config.Discord.BotUserID, &discord.DummyPersistence{}, discord.BotOptions{
 		GuildApplicationCommands: []discord.GuildApplicationCommand{
-			ListCommand,
-			TrackCommand,
-			UntrackCommand,
+			PRCommandGroup,
 		},
 	})
 

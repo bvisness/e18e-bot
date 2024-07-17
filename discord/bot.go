@@ -627,36 +627,78 @@ func (bot *BotInstance) guildCreate(ctx context.Context, guild Guild) {
 }
 
 func (bot *BotInstance) createApplicationCommands(ctx context.Context, guildID string) {
-	// Register guild application commands
+	// Register guild application commands. This looks crazy and ugly because there is
+	// no elegant symmetry to subcommands in Discord.
 	for _, cmd := range bot.guildCommands {
-		err := bot.Rest.CreateGuildApplicationCommand(
-			ctx,
-			bot.applicationID, guildID,
-			CreateGuildApplicationCommandRequest{
-				Type:        cmd.Type,
-				Name:        cmd.Name,
-				Description: cmd.Description,
-				Options:     cmd.Options,
-			},
-		)
+		req := CreateGuildApplicationCommandRequest{
+			Type:        cmd.Type,
+			Name:        cmd.Name,
+			Description: cmd.Description,
+		}
+
+		if len(cmd.Subcommands) > 0 {
+			for _, subcmd := range cmd.Subcommands {
+				subpath := cmd.Name + "/" + subcmd.Name
+				subreq := ApplicationCommandOption{
+					Name:        subcmd.Name,
+					Description: subcmd.Description,
+				}
+				if len(subcmd.Subcommands) > 0 {
+					subreq.Type = ApplicationCommandOptionTypeSubCommandGroup
+					for _, subsubcmd := range subcmd.Subcommands {
+						subsubpath := subpath + "/" + subsubcmd.Name
+						subreq.Options = append(subreq.Options, ApplicationCommandOption{
+							Type:        ApplicationCommandOptionTypeSubCommand,
+							Name:        subsubcmd.Name,
+							Description: subsubcmd.Description,
+							Options:     subsubcmd.Options,
+						})
+						bot.commands[subsubpath] = subsubcmd.Func
+					}
+				} else {
+					subreq.Type = ApplicationCommandOptionTypeSubCommand
+					subreq.Options = subcmd.Options
+					bot.commands[subpath] = subcmd.Func
+				}
+				req.Options = append(req.Options, subreq)
+			}
+		} else {
+			req.Options = cmd.Options
+			bot.commands[cmd.Name] = cmd.Func
+		}
+
+		err := bot.Rest.CreateGuildApplicationCommand(ctx, bot.applicationID, guildID, req)
 		if err != nil {
 			bot.Logger.Error("failed to create application command", "err", err)
 		}
-
-		bot.commands[cmd.Name] = cmd.Func
 	}
 }
 
 func (bot *BotInstance) doInteraction(ctx context.Context, i *Interaction) (err error) {
 	defer utils.RecoverPanicAsErrorAndLog(&err, bot.Logger)
 
-	if cmd, ok := bot.commands[i.Data.Name]; ok {
-		err := cmd(ctx, bot.Rest, i)
+	handlerPath := i.Data.Name
+	handlerOpts := i.Data.Options
+	for _, opt := range i.Data.Options {
+		switch opt.Type {
+		case ApplicationCommandOptionTypeSubCommand:
+			handlerPath += "/" + opt.Name
+			handlerOpts = opt.Options
+		case ApplicationCommandOptionTypeSubCommandGroup:
+			utils.Assert(len(opt.Options) == 1, "expected a single subcommand in the group")
+			subopt := opt.Options[0]
+			handlerPath += "/" + opt.Name + "/" + subopt.Name
+			handlerOpts = subopt.Options
+		}
+	}
+
+	if cmd, ok := bot.commands[handlerPath]; ok {
+		err := cmd(ctx, bot.Rest, i, handlerOpts)
 		if err != nil {
 			bot.Logger.Error("error in application command handler", "err", err)
 		}
 	} else {
-		bot.Logger.Warn("unrecognized application command", "name", i.Data.Name)
+		bot.Logger.Warn("unrecognized application command", "name", handlerPath)
 	}
 
 	return nil

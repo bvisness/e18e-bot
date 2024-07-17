@@ -1,4 +1,6 @@
+.DS_Store
 .idea
 *.exe
+__debug_bin*
 config/config.go
 e18e.sqlite

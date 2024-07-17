@@ -10,7 +10,7 @@ type PR struct {
 	PullNumber int        `db:"pull_number"`
 	OpenedAt   SQLiteTime `db:"opened_at"`
 
-	NPMPackage string `db:"npm_package"`
+	Package string `db:"package"`
 }
 
 func (pr *PR) Url() string {
