@@ -72,9 +72,9 @@ func MigrateDB() {
 type SQLiteTime time.Time
 
 func (s *SQLiteTime) Scan(src any) error {
-	switch src.(type) {
+	switch src := src.(type) {
 	case string:
-		t, err := time.Parse("2006-01-02 15:04:05-07:00", src.(string))
+		t, err := time.Parse("2006-01-02 15:04:05-07:00", src)
 		if err != nil {
 			return fmt.Errorf("failed to parse ISO time: %w", err)
 		}
