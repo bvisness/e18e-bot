@@ -26,7 +26,40 @@ func MigrateDB() {
 			pull_number INTEGER NOT NULL,
 			opened_at TEXT NOT NULL,
 
-			npm_package TEXT NOT NULL
+			package TEXT NOT NULL,
+
+			FOREIGN KEY (npm_package) REFERENCES package(name)
+		);
+		CREATE TABLE IF NOT EXISTS package (
+			name TEXT NOT NULL PRIMARY KEY,
+		);
+		CREATE TABLE IF NOT EXISTS package_version (
+			package TEXT NOT NULL,
+			version TEXT NOT NULL,
+
+			released_at TEXT NOT NULL,
+			published_by TEXT NOT NULL,
+			contributors TEXT NOT NULL,
+
+			num_direct_dependencies INTEGER NOT NULL,
+			num_total_dependencies INTEGER NOT NULL,
+
+			self_size_bytes INTEGER NOT NULL,
+			total_size_bytes INTEGER NOT NULL,
+
+			PRIMARY KEY (package, version),
+			FOREIGN KEY (package) REFERENCES package(name)
+		);
+		CREATE TABLE IF NOT EXISTS package_version_downloads (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			package TEXT NOT NULL,
+			version TEXT NOT NULL,
+
+			date TEXT NOT NULL,
+			weekly_downloads INTEGER NOT NULL, -- directly from npm
+			daily_downloads INTEGER, -- null at first, before computing from adjacent weekly downloads
+
+			FOREIGN KEY (package, version) REFERENCES package_version(package, version)
 		);
 	`))
 }
