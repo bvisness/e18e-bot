@@ -714,9 +714,11 @@ type Interaction struct {
 type InteractionType int
 
 const (
-	InteractionTypePing               InteractionType = 1
-	InteractionTypeApplicationCommand InteractionType = 2
-	InteractionTypeMessageComponent   InteractionType = 3
+	InteractionTypePing                           InteractionType = 1
+	InteractionTypeApplicationCommand             InteractionType = 2
+	InteractionTypeMessageComponent               InteractionType = 3
+	InteractionTypeApplicationCommandAutocomplete InteractionType = 4
+	InteractionTypeModalSubmit                    InteractionType = 5
 )
 
 // See https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-data-structure
@@ -788,12 +790,18 @@ const (
 
 // Required `options` must be listed before optional options
 type ApplicationCommandOption struct {
-	Type        ApplicationCommandOptionType     `json:"type"`        // the type of option
-	Name        string                           `json:"name"`        // 1-32 character name
-	Description string                           `json:"description"` // 1-100 character description
-	Required    bool                             `json:"required"`    // if the parameter is required or optional--default false
-	Choices     []ApplicationCommandOptionChoice `json:"choices"`     // choices for STRING, INTEGER, and NUMBER types for the user to pick from, max 25
-	Options     []ApplicationCommandOption       `json:"options"`     // if the option is a subcommand or subcommand group type, this nested options will be the parameters
+	Type         ApplicationCommandOptionType     `json:"type"`                 // the type of option
+	Name         string                           `json:"name"`                 // 1-32 character name
+	Description  string                           `json:"description"`          // 1-100 character description
+	Required     bool                             `json:"required"`             // if the parameter is required or optional--default false
+	Choices      []ApplicationCommandOptionChoice `json:"choices"`              // choices for STRING, INTEGER, and NUMBER types for the user to pick from, max 25
+	Options      []ApplicationCommandOption       `json:"options"`              // if the option is a subcommand or subcommand group type, this nested options will be the parameters
+	ChannelTypes []ChannelType                    `json:"channel_types"`        // The channels shown will be restricted to these types
+	MinValue     *float64                         `json:"min_value,omitempty"`  // The minimum value permitted
+	MaxValue     *float64                         `json:"max_value,omitempty"`  // The maximum value permitted
+	MinLength    *int                             `json:"min_length,omitempty"` // The minimum allowed length (minimum of 0, maximum of 6000)
+	MaxLength    *int                             `json:"max_length,omitempty"` // The maximum allowed length (minimum of 1, maximum of 6000)
+	Autocomplete bool                             `json:"autocomplete"`         // If autocomplete interactions are enabled for this option
 }
 
 type ApplicationCommandOptionType int

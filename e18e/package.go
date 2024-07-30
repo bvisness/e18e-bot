@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,6 +43,26 @@ var PackageCommandGroup = discord.GuildApplicationCommand{
 				},
 			},
 			Func: TrackPackage,
+		},
+		{
+			Name:        "stats",
+			Description: "View saved stats for an npm package.",
+			Options: []discord.ApplicationCommandOption{
+				{
+					Type:        discord.ApplicationCommandOptionTypeString,
+					Name:        "package",
+					Description: "The name of the npm package",
+					Required:    true,
+				},
+				{
+					Type:        discord.ApplicationCommandOptionTypeString,
+					Name:        "version",
+					Description: "The version of the npm package",
+					Required:    true,
+					// Autocomplete: true,
+				},
+			},
+			Func: PackageStats,
 		},
 
 		// Untracking is disabled for now...we don't want to do this by accident.
@@ -194,6 +215,65 @@ func UntrackPackage(ctx context.Context, rest discord.Rest, i *discord.Interacti
 	} else {
 		return ReportNeutral(ctx, rest, i.ID, i.Token, "That package is already not tracked. So, success??")
 	}
+}
+
+func PackageStats(ctx context.Context, rest discord.Rest, i *discord.Interaction, opts discord.InteractionOptions) error {
+	name := opts.MustGet("package").Value.(string)
+	version := opts.MustGet("version").Value.(string)
+
+	stats, err := db.QueryOne[PackageVersionStats](ctx, conn, `
+		SELECT $columns
+		FROM package_version_stats
+		WHERE
+			id = (
+				SELECT MAX(id)
+				FROM package_version_stats
+				WHERE package = ? AND version = ?
+			)
+	`,
+		name, version,
+	)
+	if err == db.NotFound {
+		return ReportProblem(ctx, rest, i.ID, i.Token, "Couldn't find that package / version.")
+	} else if err != nil {
+		return ReportError(ctx, rest, i.ID, i.Token, "Failed to look up package stats.", err)
+	}
+
+	var msg string
+	msg += fmt.Sprintf("**Stats for %s@%s:**\n", name, version)
+	msg += fmt.Sprintf("- **Size:** %s self, %s w/ deps, %s w/ dev deps\n", formatBytes(stats.SelfSizeBytes), formatBytes(stats.TransitiveSizeBytes), formatBytes(stats.TransitiveSizeDevBytes))
+	msg += fmt.Sprintf("- **Num dependencies:** %d direct, %d w/ transitive\n", stats.NumDirectDependencies, stats.NumTransitiveDependencies)
+	msg += fmt.Sprintf("- **Num dependencies + dev:** %d direct, %d w/ transitive\n", stats.NumDirectDependenciesDev, stats.NumTransitiveDependenciesDev)
+
+	return rest.CreateInteractionResponse(ctx, i.ID, i.Token, discord.InteractionResponse{
+		Type: discord.InteractionCallbackTypeChannelMessageWithSource,
+		Data: &discord.InteractionCallbackData{
+			Content: msg,
+		},
+	})
+}
+
+func formatBytes(n uint64) string {
+	if n >= 1_000_000_000_000 {
+		tb := float64(n) / float64(1_000_000_000_000)
+		return fmt.Sprintf("%.1f TB", tb)
+	} else if n >= 1_000_000_000 {
+		gb := float64(n) / float64(1_000_000_000)
+		return fmt.Sprintf("%.1f GB", gb)
+	} else if n >= 1_000_000 {
+		mb := float64(n) / float64(1_000_000)
+		return fmt.Sprintf("%.1f MB", mb)
+	} else if n >= 1_000 {
+		kb := float64(n) / float64(1_000)
+		return fmt.Sprintf("%.1f KB", kb)
+	} else {
+		return fmt.Sprintf("%d bytes", n)
+	}
+}
+
+func toFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return math.Round(num*output) / output
 }
 
 type PackageVersionDesc struct {

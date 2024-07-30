@@ -2,7 +2,6 @@ package e18e
 
 import (
 	"fmt"
-	"time"
 )
 
 type PR struct {
@@ -32,8 +31,8 @@ type PackageVersion struct {
 	Package string `db:"package"`
 	Version string `db:"version"`
 
-	PublishedAt time.Time `db:"published_at"`
-	PublishedBy string    `db:"published_by"`
+	PublishedAt SQLiteTime `db:"published_at"`
+	PublishedBy string     `db:"published_by"`
 	// TODO: Handle string arrays through Scanner
 	// Maintainers []string  `db:"maintainers"`
 }
@@ -43,14 +42,14 @@ type PackageVersionStats struct {
 	Package string `db:"package"`
 	Version string `db:"version"`
 
-	Date                         time.Time `db:"date"`
-	NumDirectDependencies        int       `db:"num_direct_dependencies"`
-	NumDirectDependenciesDev     int       `db:"num_direct_dependencies_dev"`
-	NumTransitiveDependencies    int       `db:"num_transitive_dependencies"`
-	NumTransitiveDependenciesDev int       `db:"num_transitive_dependencies_dev"`
-	SelfSizeBytes                int       `db:"self_size_bytes"`
-	TransitiveSizeBytes          int       `db:"transitive_size_bytes"`
-	TransitiveSizeDevBytes       int       `db:"transitive_size_bytes_dev"`
+	Date                         SQLiteTime `db:"date"`
+	NumDirectDependencies        int        `db:"num_direct_dependencies"`
+	NumDirectDependenciesDev     int        `db:"num_direct_dependencies_dev"`
+	NumTransitiveDependencies    int        `db:"num_transitive_dependencies"`
+	NumTransitiveDependenciesDev int        `db:"num_transitive_dependencies_dev"`
+	SelfSizeBytes                uint64     `db:"self_size_bytes"`
+	TransitiveSizeBytes          uint64     `db:"transitive_size_bytes"`
+	TransitiveSizeDevBytes       uint64     `db:"transitive_size_bytes_dev"`
 }
 
 type PackageVersionDownloads struct {
@@ -58,7 +57,7 @@ type PackageVersionDownloads struct {
 	Package string `db:"package"`
 	Version string `db:"version"`
 
-	Date            time.Time `db:"date"`
-	WeeklyDownloads int       `db:"weekly_downloads"`
-	DailyDownloads  *int      `db:"daily_downloads"`
+	Date            SQLiteTime `db:"date"`
+	WeeklyDownloads int        `db:"weekly_downloads"`
+	DailyDownloads  *int       `db:"daily_downloads"`
 }

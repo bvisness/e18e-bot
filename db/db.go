@@ -421,6 +421,7 @@ func typeIsQueryable(t reflect.Type) bool {
 
 	var queryableKinds = []reflect.Kind{
 		reflect.Int, reflect.Int64,
+		reflect.Uint, reflect.Uint64,
 		reflect.Float64,
 		reflect.Bool,
 		// []byte handled above
