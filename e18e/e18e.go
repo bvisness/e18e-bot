@@ -10,6 +10,7 @@ import (
 
 	"github.com/bvisness/e18e-bot/config"
 	"github.com/bvisness/e18e-bot/discord"
+	"github.com/bvisness/e18e-bot/jobs"
 	"github.com/bvisness/e18e-bot/npm"
 )
 
@@ -26,25 +27,29 @@ func Run() {
 	OpenDB()
 	MigrateDB()
 
-	botContext, cancelBot := context.WithCancel(context.Background())
-	bot := discord.RunBot(botContext, config.Config.Discord.BotToken, config.Config.Discord.BotUserID, &discord.DummyPersistence{}, discord.BotOptions{
-		GuildApplicationCommands: []discord.GuildApplicationCommand{
-			PRCommandGroup,
-			PackageCommandGroup,
-		},
-	})
+	ctx, shutdown := context.WithCancel(context.Background())
+	allJobs := jobs.Zip(
+		// TODO: real persistence
+		discord.RunBot(ctx, config.Config.Discord.BotToken, config.Config.Discord.BotUserID, &discord.DummyPersistence{}, discord.BotOptions{
+			GuildApplicationCommands: []discord.GuildApplicationCommand{
+				PRCommandGroup,
+				PackageCommandGroup,
+			},
+		}),
+		PackageStatsCron(ctx, conn),
+	)
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	go func() {
 		<-signals
 		slog.Info("Shutting down the e18e bot")
-		cancelBot()
+		shutdown()
 
 		<-signals
 		slog.Warn("Forcibly killed the e18e bot")
 		os.Exit(1)
 	}()
 
-	<-bot.C
+	<-allJobs.C
 }

@@ -36,16 +36,21 @@ type PackageVersion struct {
 	PublishedBy string    `db:"published_by"`
 	// TODO: Handle string arrays through Scanner
 	// Maintainers []string  `db:"maintainers"`
+}
 
-	StatsComputed                bool `db:"stats_computed"`
-	NumDirectDependencies        int  `db:"num_direct_dependencies"`
-	NumTransitiveDependencies    int  `db:"num_transitive_dependencies"`
-	NumDirectDevDependencies     int  `db:"num_direct_dev_dependencies"`
-	NumTransitiveDevDependencies int  `db:"num_transitive_dev_dependencies"`
-	SelfSizeBytes                int  `db:"self_size_bytes"`
-	TransitiveSizeBytes          int  `db:"transitive_size_bytes"`
-	SelfSizeDevBytes             int  `db:"self_size_dev_bytes"`
-	TransitiveSizeDevBytes       int  `db:"transitive_size_dev_bytes"`
+type PackageVersionStats struct {
+	ID      int    `db:"id"`
+	Package string `db:"package"`
+	Version string `db:"version"`
+
+	Date                         time.Time `db:"date"`
+	NumDirectDependencies        int       `db:"num_direct_dependencies"`
+	NumDirectDependenciesDev     int       `db:"num_direct_dependencies_dev"`
+	NumTransitiveDependencies    int       `db:"num_transitive_dependencies"`
+	NumTransitiveDependenciesDev int       `db:"num_transitive_dependencies_dev"`
+	SelfSizeBytes                int       `db:"self_size_bytes"`
+	TransitiveSizeBytes          int       `db:"transitive_size_bytes"`
+	TransitiveSizeDevBytes       int       `db:"transitive_size_bytes_dev"`
 }
 
 type PackageVersionDownloads struct {

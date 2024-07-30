@@ -23,6 +23,9 @@ type PackageVersion struct {
 	Maintainers []User `json:"maintainers"`
 	Publisher   User   `json:"_npmUser"`
 
+	Dependencies    map[string]string `json:"dependencies"`
+	DevDependencies map[string]string `json:"devDependencies"`
+
 	// May be filled in by the `time` field when querying packages.
 	PublishedAt time.Time
 }
@@ -30,4 +33,16 @@ type PackageVersion struct {
 type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
+}
+
+type PackageLockFile struct {
+	Name            string `json:"name"`
+	LockfileVersion int    `json:"lockfileVersion"`
+
+	Packages map[string]PackageLockFilePackage `json:"packages"`
+}
+
+type PackageLockFilePackage struct {
+	Version  string `json:"version"`
+	Resolved string `json:"resolved"`
 }

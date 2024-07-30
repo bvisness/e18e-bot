@@ -42,19 +42,24 @@ func MigrateDB() {
 			published_by TEXT NOT NULL,
 			maintainers TEXT NOT NULL, -- JSON array of usernames
 
-			-- stats
-			stats_computed INTEGER NOT NULL DEFAULT 0, -- boolean
-			num_direct_dependencies INTEGER NOT NULL DEFAULT 0,
-			num_transitive_dependencies INTEGER NOT NULL DEFAULT 0,
-			num_direct_dev_dependencies INTEGER NOT NULL DEFAULT 0,
-			num_transitive_dev_dependencies INTEGER NOT NULL DEFAULT 0,
-			self_size_bytes INTEGER NOT NULL DEFAULT 0,
-			transitive_size_bytes INTEGER NOT NULL DEFAULT 0,
-			self_size_dev_bytes INTEGER NOT NULL DEFAULT 0,
-			transitive_size_dev_bytes INTEGER NOT NULL DEFAULT 0,
-
 			PRIMARY KEY (package, version),
 			FOREIGN KEY (package) REFERENCES package(name) ON DELETE RESTRICT
+		);
+		CREATE TABLE IF NOT EXISTS package_version_stats (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			package TEXT NOT NULL,
+			version TEXT NOT NULL,
+
+			date TEXT NOT NULL,
+			num_direct_dependencies INTEGER NOT NULL DEFAULT 0,
+			num_direct_dependencies_dev INTEGER NOT NULL DEFAULT 0,
+			num_transitive_dependencies INTEGER NOT NULL DEFAULT 0,
+			num_transitive_dependencies_dev INTEGER NOT NULL DEFAULT 0,
+			self_size_bytes INTEGER NOT NULL DEFAULT 0,
+			transitive_size_bytes INTEGER NOT NULL DEFAULT 0,
+			transitive_size_bytes_dev INTEGER NOT NULL DEFAULT 0,
+
+			FOREIGN KEY (package, version) REFERENCES package_version(package, version) ON DELETE RESTRICT
 		);
 		CREATE TABLE IF NOT EXISTS package_version_downloads (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

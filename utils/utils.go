@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime/debug"
 	"time"
+
+	"golang.org/x/exp/constraints"
 )
 
 func And[T comparable](a, b T) T {
@@ -116,4 +118,20 @@ func (pv PointerLogValue[T]) LogValue() slog.Value {
 		return slog.AnyValue(pv.value)
 	}
 	return slog.AnyValue(*pv.value)
+}
+
+func Min[T constraints.Ordered](a, b T) T {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func Max[T constraints.Ordered](a, b T) T {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
 }
